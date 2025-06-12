@@ -149,10 +149,32 @@
       };
       if (img.complete) img.onload();
 
-      // マウス操作
-      canvas.addEventListener('mousedown', e => {
+      // 共通処理関数
+      function getPointerPosition(e, canvas) {
         const r = canvas.getBoundingClientRect();
-        const mx = e.clientX - r.left, my = e.clientY - r.top;
+        const scaleX = canvas.width / r.width;
+        const scaleY = canvas.height / r.height;
+        
+        let clientX, clientY;
+        if (e.touches && e.touches.length > 0) {
+          clientX = e.touches[0].clientX;
+          clientY = e.touches[0].clientY;
+        } else {
+          clientX = e.clientX;
+          clientY = e.clientY;
+        }
+        
+        return {
+          x: (clientX - r.left) * scaleX,
+          y: (clientY - r.top) * scaleY
+        };
+      }
+
+      function handleStart(e) {
+        e.preventDefault();
+        const pos = getPointerPosition(e, canvas);
+        const mx = pos.x, my = pos.y;
+        
         if (mx > selRect.x && mx < selRect.x + selRect.w && my > selRect.y && my < selRect.y + selRect.h) {
           mode = 'move';
           offsetX = mx - selRect.x;
@@ -163,11 +185,14 @@
           selRect = { x: startX, y: startY, w: 0, h: 0 };
         }
         isDragging = true;
-      });
-      canvas.addEventListener('mousemove', e => {
+      }
+
+      function handleMove(e) {
         if (!isDragging) return;
-        const r = canvas.getBoundingClientRect();
-        const mx = e.clientX - r.left, my = e.clientY - r.top;
+        e.preventDefault();
+        const pos = getPointerPosition(e, canvas);
+        const mx = pos.x, my = pos.y;
+        
         if (mode === 'move') {
           selRect.x = mx - offsetX;
           selRect.y = my - offsetY;
@@ -176,8 +201,11 @@
           selRect.h = my - startY;
         }
         drawCanvas(ctx, true);
-      });
-      canvas.addEventListener('mouseup', () => {
+      }
+
+      function handleEnd(e) {
+        if (!isDragging) return;
+        e.preventDefault();
         isDragging = false;
         if (mode === 'new') {
           if (selRect.w < 0) { selRect.x += selRect.w; selRect.w = -selRect.w; }
@@ -185,7 +213,17 @@
         }
         mode = null;
         drawCanvas(ctx, true);
-      });
+      }
+
+      // マウス操作
+      canvas.addEventListener('mousedown', handleStart);
+      canvas.addEventListener('mousemove', handleMove);
+      canvas.addEventListener('mouseup', handleEnd);
+
+      // タッチ操作
+      canvas.addEventListener('touchstart', handleStart, { passive: false });
+      canvas.addEventListener('touchmove', handleMove, { passive: false });
+      canvas.addEventListener('touchend', handleEnd, { passive: false });
 
       // 共通描画処理
       function drawCanvas(context, showBorder) {
