@@ -1,0 +1,178 @@
+<!--
+開発環境更新 (Development)
+
+このHTMLは単一ファイルで、画像をBase64で埋め込んでいます。
+外部ブラウザで開いてプレビューしてください。
+-->
+
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>矩形選択 & 自動折返し文字描画（黒文字・複数行対応）</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
+
+    canvas {
+      border: 1px solid #ccc;
+      display: block;
+      margin: 10px 0;
+      cursor: crosshair;
+    }
+
+    textarea,
+    button {
+      margin-right: 10px;
+      margin-top: 5px;
+    }
+
+    #controls {
+      margin-top: 10px;
+    }
+
+    #info {
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    textarea {
+      width: 100%;
+      max-width: 600px;
+      height: 100px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>矩形選択＆文字折返し描画（黒文字・複数行対応）</h1>
+  <p id="info">ドラッグで領域を選択・移動できます。テキストエリアで複数行入力し、折返し描画。</p>
+
+  <!-- Base64埋め込み画像 -->
+  <img id="sourceImage" src="normal.png" alt="固定画像" style="display:none;">
+  <canvas id="canvas"></canvas>
+
+  <div id="controls">
+    <label for="textInput">文字:</label><br>
+    <textarea id="textInput">サンプルテキスト
+複数行も
+入力できます</textarea>
+    <br>
+    <button id="downloadBtn">ダウンロード</button>
+  </div>
+
+  <script>
+    window.addEventListener('load', () => {
+      const img = document.getElementById('sourceImage');
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const textInput = document.getElementById('textInput');
+      const downloadBtn = document.getElementById('downloadBtn');
+
+      // 初期選択領域
+      let selRect = { x: 52, y: 57, w: 285, h: 130 };
+      let isDragging = false, mode = null;
+      let startX, startY, offsetX, offsetY;
+
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        drawCanvas(ctx, true);
+      };
+      if (img.complete) img.onload();
+
+      // マウス操作
+      canvas.addEventListener('mousedown', e => {
+        const r = canvas.getBoundingClientRect();
+        const mx = e.clientX - r.left, my = e.clientY - r.top;
+        if (mx > selRect.x && mx < selRect.x + selRect.w && my > selRect.y && my < selRect.y + selRect.h) {
+          mode = 'move';
+          offsetX = mx - selRect.x;
+          offsetY = my - selRect.y;
+        } else {
+          mode = 'new';
+          startX = mx; startY = my;
+          selRect = { x: startX, y: startY, w: 0, h: 0 };
+        }
+        isDragging = true;
+      });
+      canvas.addEventListener('mousemove', e => {
+        if (!isDragging) return;
+        const r = canvas.getBoundingClientRect();
+        const mx = e.clientX - r.left, my = e.clientY - r.top;
+        if (mode === 'move') {
+          selRect.x = mx - offsetX;
+          selRect.y = my - offsetY;
+        } else if (mode === 'new') {
+          selRect.w = mx - startX;
+          selRect.h = my - startY;
+        }
+        drawCanvas(ctx, true);
+      });
+      canvas.addEventListener('mouseup', () => {
+        isDragging = false;
+        if (mode === 'new') {
+          if (selRect.w < 0) { selRect.x += selRect.w; selRect.w = -selRect.w; }
+          if (selRect.h < 0) { selRect.y += selRect.h; selRect.h = -selRect.h; }
+        }
+        mode = null;
+        drawCanvas(ctx, true);
+      });
+
+      // 共通描画処理
+      function drawCanvas(context, showBorder) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(img, 0, 0);
+        // 枠線（表示用のみ）
+        if (showBorder) {
+          context.save();
+          context.strokeStyle = 'red'; context.lineWidth = 2; context.setLineDash([6, 4]);
+          context.strokeRect(selRect.x, selRect.y, selRect.w, selRect.h);
+          context.restore();
+        }
+        // クリップ領域
+        context.save();
+        context.beginPath(); context.rect(selRect.x, selRect.y, selRect.w, selRect.h); context.clip();
+        // テキスト折り返し描画（黒一色）
+        const text = textInput.value;
+        const lineHeight = 34;
+        const x0 = selRect.x;
+        let y0 = selRect.y + lineHeight;
+        context.font = `${lineHeight}px sans-serif`;
+        context.fillStyle = 'black';
+        const lines = text.split("\n");
+        for (const rawLine of lines) {
+          let line = '';
+          for (const ch of rawLine) {
+            const test = line + ch;
+            if (context.measureText(test).width > selRect.w && line) {
+              context.fillText(line, x0, y0);
+              line = ch; y0 += lineHeight;
+            } else {
+              line = test;
+            }
+          }
+          if (line) { context.fillText(line, x0, y0); y0 += lineHeight; }
+        }
+        context.restore();
+      }
+
+      textInput.addEventListener('input', () => drawCanvas(ctx, true));
+
+      downloadBtn.addEventListener('click', () => {
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = canvas.width;
+        exportCanvas.height = canvas.height;
+        const ectx = exportCanvas.getContext('2d');
+        drawCanvas(ectx, false);
+        const link = document.createElement('a'); link.download = 'text_image.png';
+        link.href = exportCanvas.toDataURL('image/png'); link.click();
+      });
+    });
+  </script>
+</body>
+
+</html>
