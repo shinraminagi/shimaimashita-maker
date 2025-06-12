@@ -11,6 +11,11 @@
 <head>
   <meta charset="UTF-8">
   <title>矩形選択 & 自動折返し文字描画（黒文字・複数行対応）</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+P+One&family=Noto+Sans+JP:wght@400;700&family=Noto+Serif+JP:wght@400;700&display=swap"
+    rel="stylesheet">
   <style>
     body {
       font-family: sans-serif;
@@ -62,6 +67,13 @@
     <input type="radio" id="summerImg" name="imageSelect" value="summer.png">
     <label for="summerImg">summer.png</label>
     <br><br>
+    <label for="fontSelect">フォント:</label><br>
+    <select id="fontSelect">
+      <option value="Mochiy Pop P One" selected>Mochiy Pop P One</option>
+      <option value="Noto Sans JP">Noto Sans JP</option>
+      <option value="Noto Serif JP">Noto Serif JP</option>
+    </select>
+    <br><br>
     <label for="textInput">文字:</label><br>
     <textarea id="textInput">サンプルテキスト
 複数行も
@@ -78,6 +90,7 @@
       const textInput = document.getElementById('textInput');
       const downloadBtn = document.getElementById('downloadBtn');
       const imageRadios = document.querySelectorAll('input[name="imageSelect"]');
+      const fontSelect = document.getElementById('fontSelect');
 
       // 初期選択領域
       let selRect = { x: 52, y: 57, w: 285, h: 130 };
@@ -87,7 +100,10 @@
       img.onload = () => {
         canvas.width = img.width;
         canvas.height = img.height;
-        drawCanvas(ctx, true);
+        // Load the initial font and then draw
+        document.fonts.load(`34px "${fontSelect.value}"`).then(() => {
+          drawCanvas(ctx, true);
+        });
       };
       if (img.complete) img.onload();
 
@@ -148,7 +164,7 @@
         const lineHeight = 34;
         const x0 = selRect.x;
         let y0 = selRect.y + lineHeight;
-        context.font = `${lineHeight}px sans-serif`;
+        context.font = `${lineHeight}px "${fontSelect.value}", sans-serif`;
         context.fillStyle = 'black';
         const lines = text.split("\n");
         for (const rawLine of lines) {
@@ -174,6 +190,12 @@
           if (radio.checked) {
             img.src = radio.value;
           }
+        });
+      });
+
+      fontSelect.addEventListener('change', () => {
+        document.fonts.load(`34px "${fontSelect.value}"`).then(() => {
+          drawCanvas(ctx, true);
         });
       });
 
