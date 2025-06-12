@@ -56,6 +56,12 @@
   <canvas id="canvas"></canvas>
 
   <div id="controls">
+    <label>画像:</label><br>
+    <input type="radio" id="normalImg" name="imageSelect" value="normal.png" checked>
+    <label for="normalImg">normal.png</label>
+    <input type="radio" id="summerImg" name="imageSelect" value="summer.png">
+    <label for="summerImg">summer.png</label>
+    <br><br>
     <label for="textInput">文字:</label><br>
     <textarea id="textInput">サンプルテキスト
 複数行も
@@ -71,6 +77,7 @@
       const ctx = canvas.getContext('2d');
       const textInput = document.getElementById('textInput');
       const downloadBtn = document.getElementById('downloadBtn');
+      const imageRadios = document.querySelectorAll('input[name="imageSelect"]');
 
       // 初期選択領域
       let selRect = { x: 52, y: 57, w: 285, h: 130 };
@@ -161,6 +168,14 @@
       }
 
       textInput.addEventListener('input', () => drawCanvas(ctx, true));
+
+      imageRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          if (radio.checked) {
+            img.src = radio.value;
+          }
+        });
+      });
 
       downloadBtn.addEventListener('click', () => {
         const exportCanvas = document.createElement('canvas');
