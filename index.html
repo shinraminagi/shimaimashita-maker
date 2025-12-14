@@ -22,7 +22,7 @@
     canvas {
       cursor: crosshair;
     }
-    
+
     .slider::-webkit-slider-thumb {
       appearance: none;
       height: 20px;
@@ -33,7 +33,7 @@
       border: 2px solid #ffffff;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     }
-    
+
     .slider::-moz-range-thumb {
       height: 20px;
       width: 20px;
@@ -141,12 +141,20 @@
               <label class="block text-sm font-medium text-slate-700 mb-2">
                 フォントサイズ: <span id="fontSizeDisplay" class="text-blue-600">34</span>px
               </label>
-              <input type="range" id="fontSizeSlider" min="16" max="72" value="34" 
+              <input type="range" id="fontSizeSlider" min="16" max="72" value="34"
                 class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider">
               <div class="flex justify-between text-xs text-slate-500 mt-1">
                 <span>16px</span>
                 <span>72px</span>
               </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-100">
+              <label class="inline-flex items-center cursor-pointer hover:opacity-80 transition-opacity">
+                <input type="checkbox" id="showBorderCheckbox" checked
+                  class="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 border-gray-300">
+                <span class="ml-2 text-slate-700 font-medium">テキスト枠を表示</span>
+              </label>
             </div>
           </div>
         </div>
@@ -176,6 +184,7 @@
       const fontSelect = document.getElementById('fontSelect');
       const fontSizeSlider = document.getElementById('fontSizeSlider');
       const fontSizeDisplay = document.getElementById('fontSizeDisplay');
+      const showBorderCheckbox = document.getElementById('showBorderCheckbox');
 
       // 初期選択領域
       let selRect = { x: 52, y: 57, w: 285, h: 130 };
@@ -187,7 +196,7 @@
         canvas.height = img.height;
         // Load the initial font and then draw
         document.fonts.load(`${fontSizeSlider.value}px "${fontSelect.value}"`).then(() => {
-          drawCanvas(ctx, true);
+          drawCanvas(ctx, showBorderCheckbox.checked);
         });
       };
       if (img.complete) img.onload();
@@ -243,7 +252,7 @@
           selRect.w = mx - startX;
           selRect.h = my - startY;
         }
-        drawCanvas(ctx, true);
+        drawCanvas(ctx, showBorderCheckbox.checked);
       }
 
       function handleEnd(e) {
@@ -255,7 +264,7 @@
           if (selRect.h < 0) { selRect.y += selRect.h; selRect.h = -selRect.h; }
         }
         mode = null;
-        drawCanvas(ctx, true);
+        drawCanvas(ctx, showBorderCheckbox.checked);
       }
 
       // マウス操作
@@ -307,27 +316,31 @@
         context.restore();
       }
 
-      textInput.addEventListener('input', () => drawCanvas(ctx, true));
+      textInput.addEventListener('input', () => drawCanvas(ctx, showBorderCheckbox.checked));
+
+      showBorderCheckbox.addEventListener('change', () => {
+        drawCanvas(ctx, showBorderCheckbox.checked);
+      });
 
       imageRadios.forEach(radio => {
         radio.addEventListener('change', () => {
           if (radio.checked) {
             img = document.getElementById(radio.value);
           }
-          drawCanvas(ctx, true);
+          drawCanvas(ctx, showBorderCheckbox.checked);
         });
       });
 
       fontSelect.addEventListener('change', () => {
         document.fonts.load(`${fontSizeSlider.value}px "${fontSelect.value}"`).then(() => {
-          drawCanvas(ctx, true);
+          drawCanvas(ctx, showBorderCheckbox.checked);
         });
       });
 
       fontSizeSlider.addEventListener('input', () => {
         fontSizeDisplay.textContent = fontSizeSlider.value;
         document.fonts.load(`${fontSizeSlider.value}px "${fontSelect.value}"`).then(() => {
-          drawCanvas(ctx, true);
+          drawCanvas(ctx, showBorderCheckbox.checked);
         });
       });
 
