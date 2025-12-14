@@ -223,6 +223,7 @@
       }
 
       function handleStart(e) {
+        if (e.type === 'mousedown' && e.button !== 0) return;
         e.preventDefault();
         const pos = getPointerPosition(e, canvas);
         const mx = pos.x, my = pos.y;
